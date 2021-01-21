@@ -24,7 +24,7 @@ const Member = mongoose.model('member', mongoose.Schema({
 db.on('error', (error) => console.error(error))
 db.once('open', () => {
     console.log('connected to database')
-    bankClient.login('ODAwNzI3MjMyMTQ1MjYwNTk2.YAWVWA.MS8BEgbS54R9Tf71MOdECzYNwno')
+    bankClient.login(process.env.BOT_TOKEN)
 })
 
 bankClient.on('ready', () => {
