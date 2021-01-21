@@ -64,6 +64,18 @@ async function handleCommand(message) {
     if (command === 'delay') {
         await setDelay(message, args[0])
     }
+    if (command === 'list') {
+        await showList(message)
+    }
+}
+
+async function showList(message) {
+    var log = ""
+    let list = await Member.find()
+    for (user of list) {
+        log = log+"\n"+getUser(message, user.user)+"\t\t"+user.balance
+    }
+    message.channel.send(log)
 }
 
 async function setDelay(message, value) {
@@ -165,4 +177,8 @@ async function reward(message, args) {
     } else {
         message.channel.send("🏦 Tu n'es pas autorisé.e à faire ça.")
     }
+}
+
+function getUser(message, id) {
+    return message.guild.members.cache.get(id).user.username
 }
