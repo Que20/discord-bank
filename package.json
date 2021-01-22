@@ -19,6 +19,7 @@
   "dependencies": {
     "discord.js": "*",
     "mongoose": "*",
-    "dotenv": "*"
+    "dotenv": "*",
+    "table": "*"
   }
 }

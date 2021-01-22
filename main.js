@@ -1,10 +1,11 @@
+const {table} = require('table')
 const Discord = require('discord.js')
 const mongoose = require('mongoose')
 
 // CONSTANTS
 let cmd_prefix = "!"
 let reward_role = "Banquier"
-var auto_reward_delay = 60 // 1 min
+var auto_reward_delay = 120 // 2 min
 let inacive_penalty = 432000 // 5 jours
 let coin_tag = "⍧"
 
@@ -70,12 +71,20 @@ async function handleCommand(message) {
 }
 
 async function showList(message) {
-    var log = ""
-    let list = await Member.find()
-    for (user of list) {
-        log = log+"\n"+getUser(message, user.user)+"\t\t"+user.balance
+    if (message.member.roles.cache.some(role => role.name === reward_role)) {
+        var log = []
+        let list = await Member.find()
+        for (let i = 0; i < list.length; i++) {
+            if (list[i] != null) {
+                let user = await getUser(message, list[i].user)
+                log.push([user.username, list[i].balance]) //truncateString(user.username, 9)
+            }
+        }
+        let output = table(log)
+        message.channel.send("```"+output+"```")
+    } else {
+        message.channel.send("🏦 Tu n'es pas autorisé.e à faire ça.")
     }
-    message.channel.send(log)
 }
 
 async function setDelay(message, value) {
@@ -84,7 +93,11 @@ async function setDelay(message, value) {
             let d = parseInt(value, 10)
             auto_reward_delay = d*60
             message.channel.send("🏦 La distribution se fait maintenant toutes les **"+d+" minutes**.")
+        } else {
+            message.channel.send("🏦 La distribution se fait toutes les **"+auto_reward_delay/60+" minutes**.")
         }
+    } else {
+        message.channel.send("🏦 Tu n'es pas autorisé.e à faire ça.")
     }
 }
 
@@ -179,6 +192,10 @@ async function reward(message, args) {
     }
 }
 
-function getUser(message, id) {
-    return message.guild.members.cache.get(id).user.username
+async function getUser(message, id) {
+    return await bankClient.users.fetch(id, { cache: true })
+}
+
+function truncateString(str, n){
+    return (str.length > n) ? str.substr(0, n-1).trim() + '...' : str;
 }
