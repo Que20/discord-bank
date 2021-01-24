@@ -2,14 +2,16 @@ const {table} = require('table')
 const Discord = require('discord.js')
 const mongoose = require('mongoose')
 
+require('dotenv').config()
+
 // CONSTANTS
 let cmd_prefix = "!"
 let reward_role = "Banquier"
 var auto_reward_delay = 120 // 2 min
 let inacive_penalty = 432000 // 5 jours
 let coin_tag = "⍧"
-
-require('dotenv').config()
+let no_reward_channels = process.env.NO_REWARD_CHANNELS.split(';')
+let reaction_based_reward_channels = process.env.REACTION_BASED_REWARD_CHANNELS.split(";")
 
 const bankClient = new Discord.Client()
 
@@ -37,7 +39,23 @@ bankClient.on('message', async msg => {
     if (msg.content.startsWith(cmd_prefix)) {
         handleCommand(msg)
     } else {
-        rewardMessage(msg)
+        if (no_reward_channels.includes(msg.channel.name) == false) {
+            rewardMessage(msg)
+        }
+        if (reaction_based_reward_channels.includes(msg.channel.name)) {
+            const filter = (reaction, user) => {
+                return ['😭', '🤣', '😂', '😅'].includes(reaction.emoji.name)
+            }
+            let delay = 5*60000
+            msg.awaitReactions(filter, { max: 5, time: delay, errors: ['time'] })
+	            // .then(collected => {
+                //     //
+                // })
+                .catch(collected => {
+                    let count = collected.size
+                    giveReward(msg.author.id, count*1)
+                });
+        }
     }
 })
 
