@@ -4,6 +4,11 @@ const mongoose = require('mongoose')
 
 require('dotenv').config()
 
+Array.prototype.subarray = function(start, end) {
+    if (!end) { end = -1; } 
+    return this.slice(start, this.length + 1 - (end * -1));
+}
+
 // CONSTANTS
 let cmd_prefix = "!"
 let reward_role = "Banquier"
@@ -95,11 +100,18 @@ async function showList(message) {
         for (let i = 0; i < list.length; i++) {
             if (list[i] != null) {
                 let user = await getUser(message, list[i].user)
-                log.push([user.username, list[i].balance]) //truncateString(user.username, 9)
+                if (list[i].balance != 0) {
+                    log.push([user.username, list[i].balance]) //truncateString(user.username, 9)
+                }
             }
         }
-        let output = table(log)
-        message.channel.send("```"+output+"```")
+        var i,j,temparray,chunk = 10;
+        for (i=0,j=log.length; i<j; i+=chunk) {
+            temparray = log.slice(i,i+chunk);
+            let output = table(temparray)
+            message.channel.send("```"+output+"```")
+        }
+        
     } else {
         message.channel.send("🏦 Tu n'es pas autorisé.e à faire ça.")
     }
