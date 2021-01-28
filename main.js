@@ -66,7 +66,7 @@ bankClient.on('message', async msg => {
 
 async function showIntro(message) {
     message.channel.send("🏦 Ce serveur utilise un systeme de monnaie interne. Interragis dans les differents chan textuels et gagne des "+coin_tag+" que tu peux ensuite dépenser.")
-    message.channel.send("Liste des commandes:\n- `!balance` : permet de voir combien de "+coin_tag+" tu as\n- `!transfert <montant> <membre>` : pour offrir des "+coin_tag+" à un autre membre\n")
+    message.channel.send("Liste des commandes:\n- `!balance` : permet de voir combien de "+coin_tag+" tu as\n- `!transfert <montant> <membre>` : pour offrir des "+coin_tag+" à un autre membre\n- `!top5` : afficher le top 5 des plus riches du serveur")
     message.channel.send("Dépensez vos "+coin_tag+" dans le chan #marketplace ou venez tenter votre chance dans le chan #casino.")
 }
 
@@ -91,12 +91,15 @@ async function handleCommand(message) {
     if (command === 'list') {
         await showList(message)
     }
+    if (command === 'top5') {
+        await showTop(message)
+    }
 }
 
 async function showList(message) {
     if (message.member.roles.cache.some(role => role.name === reward_role)) {
         var log = []
-        let list = await Member.find()
+        let list = await Member.find().sort({ balance: 'desc' })
         for (let i = 0; i < list.length; i++) {
             if (list[i] != null) {
                 let user = await getUser(message, list[i].user)
@@ -114,6 +117,25 @@ async function showList(message) {
         
     } else {
         message.channel.send("🏦 Tu n'es pas autorisé.e à faire ça.")
+    }
+}
+
+async function showTop(message) {
+    var log = []
+    let list = await Member.find().sort({ balance: 'desc' })
+    for (let i = 0; i < 5; i++) {
+        if (list[i] != null) {
+            let user = await getUser(message, list[i].user)
+            if (list[i].balance != 0) {
+                log.push([user.username, list[i].balance]) //truncateString(user.username, 9)
+            }
+        }
+    }
+    var i,j,temparray,chunk = 10;
+    for (i=0,j=log.length; i<j; i+=chunk) {
+        temparray = log.slice(i,i+chunk);
+        let output = table(temparray)
+        message.channel.send("```"+output+"```")
     }
 }
 
