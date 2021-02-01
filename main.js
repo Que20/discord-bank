@@ -20,6 +20,8 @@ let reaction_based_reward_channels = process.env.REACTION_BASED_REWARD_CHANNELS.
 
 const bankClient = new Discord.Client()
 
+var racketCoolDown = 0
+
 mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
 const db = mongoose.connection
 
@@ -90,6 +92,9 @@ async function handleCommand(message) {
     }
     if (command === 'list') {
         await showList(message)
+    }
+    if (command === 'racket') {
+        await racket(message)
     }
     if (command === 'top5') {
         await showTop(message)
@@ -206,23 +211,77 @@ async function transfert(message, args) {
         message.channel.send("Usage: !transfert <montant> <membre>")
         return
     }
+    if (to.id == from.id) {
+        message.channel.send("Vous ne pouvez pas vous transferer des "+coin_tag+" à vous même.")
+        message.channel.send("Usage: !transfert <montant> <membre>")
+        return
+    }
     const amount = parseInt(args[0], 10)
     if (amount <= 0) {
         message.channel.send("Le montant doit étre supérieur ou égal à 0"+coin_tag+"")
         return
     }
-    giveReward(from.id, -amount)
-    giveReward(to.id, amount)
-    message.channel.send("🏦 Quelle générosité ! "+from.toString()+" vient de donner "+amount+""+coin_tag+"  à "+to.toString())
+    let f = await giveReward(from.id, -amount)
+    if (f) {
+        let t = giveReward(to.id, amount)
+        message.channel.send("🏦 Quelle générosité ! "+from.toString()+" vient de donner "+amount+""+coin_tag+"  à "+to.toString())
+    } else {
+        message.channel.send("🏦 "+from.toString()+", tu ne peux pas transferer des "+coin_tag+" que tu n'as pas !")
+    }
 }
 
 async function giveReward(userID, amount) {
     const user = await Member.findOne({ user: userID })
     if (user == null) {
+        if (amount < 0) {
+            return false
+        }
         let current = 1 + Date.now()
         const newMember = await Member.create({user: userID, balance: amount, lastUpdated: current })
+        return true
     } else {
-        let updated = await Member.findOneAndUpdate({ user: userID }, { balance: user.balance+amount }, { new: true})
+        if (user.balance+amount > 0) {
+            let updated = await Member.findOneAndUpdate({ user: userID }, { balance: user.balance+amount }, { new: true})
+            return true
+        } else {
+            return false
+        }
+    }
+}
+
+async function racket(message) {
+    let target = message.mentions.users.first()
+    if (target == null) {
+        message.channel.send("Usage: !racket <membre>")
+        return
+    }
+    if (target.id == message.author.id) {
+        message.channel.send("Tu ne peux pas te racketter toi même.")
+        return
+    }
+    let now = Math.round(1+Date.now()/1000)
+    if (now < racketCoolDown) {
+        message.channel.send("Tu ne peux pas encore utiliser cette commande.")
+        let delay = Math.round(racketCoolDown-now)
+        console.log("wait "+delay)
+        return
+    } else {
+        racketCoolDown = now+getRndInteger(60, 300)
+    }
+    let succcess = Math.floor(Math.random() * 2);
+    if (succcess != 1) {
+        message.channel.send("Désolé, tu n'as pas assez de charisme pour racketter cette personne.")
+        return
+    } else {
+        let amount = Math.floor(Math.random() * 11);
+        let racket = await giveReward(target.id, -amount)
+        if (racket) {
+            let stealer = await giveReward(message.author.id, amount)
+            message.channel.send(message.author.toString()+" vient de racketter "+amount+coin_tag+" à "+target.toString()+".")
+            return
+        } else {
+            message.channel.send("Désolé, tu n'as pas assez de charisme pour racketter cette personne.")
+        }
     }
 }
 
@@ -250,4 +309,8 @@ async function getUser(message, id) {
 
 function truncateString(str, n){
     return (str.length > n) ? str.substr(0, n-1).trim() + '...' : str;
+}
+
+function getRndInteger(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) ) + min;
 }
