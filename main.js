@@ -99,6 +99,42 @@ async function handleCommand(message) {
     if (command === 'top5') {
         await showTop(message)
     }
+    if (command === 'boutique') {
+        await handleStore(message, args)
+    }
+}
+
+async function handleStore(message, args) {
+    if (args[0] != null) {
+        if (args[0] === 'add') {
+            let role = args[1]
+            let price = args[2]
+            if (role != null && price != null) {
+                message.channel.send('Element de boutique ajouté')
+            } else {
+                message.channel.send('Usage: !boutique add <role> <prix>')
+                message.channel.send('Exemple: `!boutique add SuperRole 100`')
+            }
+        }
+        if (args[0] === 'remove') {
+            
+        }
+        if (args[0] === 'buy') {
+            if (args[1] != null) {
+                let role = args[1] == 1 ? "SuperRole" : "Pilier"
+                message.channel.send(message.author.toString()+" achète le role "+role)
+            } else {
+                message.channel.send('Pour acheter, utilisez la commande `!boutique buy <numéro>`')
+                message.channel.send('Pour consulter les rôles à vendre, utilisez la commande `!boutique`')
+            }
+        }
+        if (args[0] === 'help') {
+            message.channel.send('Liste des commandes de la boutique\n- `!boutique add <role> <prix>` (admin seulement) pour ajouter un rôle à vendre\n- `!boutique remove <numéro>` (admin seulement) pour supprimer un role à vendre\n- `!boutique buy <numéro>` acheter un rôle\n- `!boutique` pour afficher les roles disponnibles à l\'achat')
+        }
+    } else {
+        message.channel.send('Roles à vendre :\n[1] - SuperRole - 100'+coin_tag+"\n[2] - Pilier - 400"+coin_tag)
+        message.channel.send('Pour acheter, utilisez la commande `!boutique buy <numéro>`')
+    }
 }
 
 async function showList(message) {
