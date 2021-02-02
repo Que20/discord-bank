@@ -97,7 +97,10 @@ async function handleCommand(message) {
         await racket(message)
     }
     if (command === 'top5') {
-        await showTop(message)
+        await showTop(5, message)
+    }
+    if (command === 'top10') {
+        await showTop(10, message)
     }
     if (command === 'boutique') {
         await handleStore(message, args)
@@ -161,10 +164,10 @@ async function showList(message) {
     }
 }
 
-async function showTop(message) {
+async function showTop(count, message) {
     var log = []
     let list = await Member.find().sort({ balance: 'desc' })
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < count; i++) {
         if (list[i] != null) {
             let user = await getUser(message, list[i].user)
             if (list[i].balance != 0) {
@@ -172,12 +175,8 @@ async function showTop(message) {
             }
         }
     }
-    var i,j,temparray,chunk = 10;
-    for (i=0,j=log.length; i<j; i+=chunk) {
-        temparray = log.slice(i,i+chunk);
-        let output = table(temparray)
-        message.channel.send("```"+output+"```")
-    }
+    let output = table(log)
+    message.channel.send("```"+output+"```")
 }
 
 async function setDelay(message, value) {
@@ -291,32 +290,50 @@ async function racket(message) {
         message.channel.send("Usage: !racket <membre>")
         return
     }
-    if (target.id == message.author.id) {
-        message.channel.send("Tu ne peux pas te racketter toi même.")
+    if (target.bot) {
+        //message.channel.send("Tu ne peux pas racketter un bot.")
+        message.react('🤖')
         return
     }
+    if (target.id == message.author.id) {
+        //message.channel.send("Tu ne peux pas te racketter toi même.")
+        message.react('❌')
+        return
+    }
+    // if (target.id == '790359047014187069') {
+    //     let racket = await giveReward(target.id, -100)
+    //     if (racket) {
+    //         let stealer = await giveReward(message.author.id, 100)
+    //         message.channel.send("Coup critique! "+message.author.toString()+" viens de voler 100"+coin_tag+" à "+target.toString()+".")
+    //     }
+    //     return
+    // }
     let now = Math.round(1+Date.now()/1000)
     if (now < racketCoolDown) {
-        message.channel.send("Tu ne peux pas encore utiliser cette commande.")
+        //message.channel.send("Tu ne peux pas encore utiliser cette commande.")
         let delay = Math.round(racketCoolDown-now)
-        console.log("wait "+delay)
+        message.react('⏳')
         return
     } else {
         racketCoolDown = now+getRndInteger(60, 300)
     }
     let succcess = Math.floor(Math.random() * 2);
     if (succcess != 1) {
-        message.channel.send("Désolé, tu n'as pas assez de charisme pour racketter cette personne.")
+        message.react('❌')
+        //message.channel.send("Désolé, tu n'as pas assez de charisme pour racketter cette personne.")
         return
     } else {
         let amount = Math.floor(Math.random() * 11);
         let racket = await giveReward(target.id, -amount)
         if (racket) {
             let stealer = await giveReward(message.author.id, amount)
-            message.channel.send(message.author.toString()+" vient de racketter "+amount+coin_tag+" à "+target.toString()+".")
+            let reaction = getEmojiForInt(amount)
+            message.react(reaction)
+            //message.channel.send(message.author.toString()+" vient de racketter "+amount+coin_tag+" à "+target.toString()+".")
             return
         } else {
-            message.channel.send("Désolé, tu n'as pas assez de charisme pour racketter cette personne.")
+            //message.channel.send("Désolé, tu n'as pas assez de charisme pour racketter cette personne.")
+            message.react('❌')
         }
     }
 }
@@ -349,4 +366,32 @@ function truncateString(str, n){
 
 function getRndInteger(min, max) {
     return Math.floor(Math.random() * (max - min + 1) ) + min;
+}
+
+function getEmojiForInt(value) {
+    if (value == 0) {
+        return "0️⃣"
+    } else if (value == 1) {
+        return "1️⃣"
+    } else if (value == 2) {
+        return "2️⃣"
+    } else if (value == 3) {
+        return "3️⃣"
+    } else if (value == 4) {
+        return "4️⃣"
+    } else if (value == 5) {
+        return "5️⃣"
+    } else if (value == 6) {
+        return "6️⃣"
+    } else if (value == 7) {
+        return "7️⃣"
+    } else if (value == 8) {
+        return "8️⃣"
+    } else if (value == 9) {
+        return "9️⃣"
+    } else if (value == 10) {
+        return "🔟"
+    } else {
+        return null
+    }
 }
